@@ -1,0 +1,25 @@
+{
+  "name": "node-typescript",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^14.0.13",
+    "nodemon": "^2.0.4",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.5"
+  },
+  "scripts": {
+    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
+    "build": "npx tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@types/sqlite3": "^3.1.6",
+    "@types/ws": "^7.2.5",
+    "node-dht-sensor": "^0.4.2",
+    "sqlite": "^4.0.11",
+    "sqlite3": "^4.2.0",
+    "ws": "^7.3.0"
+  }
+}
