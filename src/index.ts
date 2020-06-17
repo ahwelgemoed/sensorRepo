@@ -15,7 +15,6 @@ const ws = new ReconnectingWebSocket('ws://10.0.0.126:8080', [], options);
 let interval;
 
 const openSocket = () => {
-  console.log('ws.readyState == 3', ws.readyState);
   ws.addEventListener('open', function connection(ws) {
     setInterval(() => {
       sentTempToSocket();
@@ -45,7 +44,7 @@ ws.addEventListener('message', function incoming(data) {
 });
 
 ws.addEventListener('close', function close() {
-  console.log('"Closed"');
+  console.log('🔥-Closed');
 });
 
 openSocket();
