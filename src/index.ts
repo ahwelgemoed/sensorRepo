@@ -19,7 +19,7 @@ const openSocket = () => {
   ws.addEventListener('open', function connection(ws) {
     setInterval(() => {
       sentTempToSocket();
-    }, 5000);
+    }, 60000);
   });
 };
 
