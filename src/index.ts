@@ -1,17 +1,17 @@
 import WebSocket from 'ws';
 import sensor from 'node-dht-sensor';
-import { setInterval } from 'timers';
 
 const asyncSensor = sensor.promises;
 
 const ws = new WebSocket('ws://10.0.0.126:8080');
-
-ws.on('open', function open() {
-  ws.send('Im Online');
-  setInterval(() => {
-    sentTempToSocket();
-  }, 5000);
-});
+let closeInterval;
+const openSocket = () => {
+  ws.on('open', function open() {
+    closeInterval = setInterval(() => {
+      sentTempToSocket();
+    }, 5000);
+  });
+};
 
 interface SensorValues extends Promise<void> {
   temperature: string;
@@ -38,3 +38,12 @@ const sentTempToSocket = async () => {
 ws.on('message', function incoming(data) {
   console.log(data);
 });
+
+ws.on('close', function close() {
+  clearInterval(closeInterval);
+  setTimeout(() => {
+    openSocket();
+  }, 5000);
+});
+
+openSocket();
