@@ -15,7 +15,9 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@types/reconnectingwebsocket": "^1.0.4",
     "node-dht-sensor": "^0.4.2",
+    "reconnecting-websocket": "^4.4.0",
     "ws": "^7.3.0"
   }
 }

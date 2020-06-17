@@ -1,20 +1,25 @@
 import WebSocket from 'ws';
 import sensor from 'node-dht-sensor';
+import ReconnectingWebSocket from 'reconnecting-websocket';
 
 const asyncSensor = sensor.promises;
 
-interface SensorValues extends Promise<void> {
-  temperature: string;
-  humidity: string;
-}
+const options = {
+  WebSocket: WebSocket, // custom WebSocket constructor
+  connectionTimeout: 5000,
+  maxRetries: 100,
+};
 
-const ws = new WebSocket('ws://10.0.0.126:8080');
-let closeInterval;
+const ws = new ReconnectingWebSocket('ws://10.0.0.126:8080', [], options);
+
+let interval;
+
 const openSocket = () => {
-  ws.on('open', function open() {
-    closeInterval = setInterval(() => {
+  console.log('ws.readyState == 3', ws.readyState);
+  ws.addEventListener('open', function connection(ws) {
+    setInterval(() => {
       sentTempToSocket();
-    }, 5000);
+    }, 500);
   });
 };
 
@@ -29,24 +34,18 @@ const getTemp = async () => {
   }
 };
 const sentTempToSocket = async () => {
+  clearInterval(interval);
   const res = await getTemp();
   const x = JSON.stringify(res);
   await ws.send(x);
 };
 
-ws.on('message', function incoming(data) {
+ws.addEventListener('message', function incoming(data) {
   console.log(data);
 });
 
-ws.on('close', function close() {
-  clearInterval(closeInterval);
-  setTimeout(() => {
-    openSocket();
-  }, 5000);
+ws.addEventListener('close', function close() {
+  console.log('"Closed"');
 });
 
-const check = () => {
-  if (!ws || ws.readyState == 3) openSocket();
-};
-setInterval(check, 5000);
 openSocket();
