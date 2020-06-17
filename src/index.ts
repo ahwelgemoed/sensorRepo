@@ -3,6 +3,11 @@ import sensor from 'node-dht-sensor';
 
 const asyncSensor = sensor.promises;
 
+interface SensorValues extends Promise<void> {
+  temperature: string;
+  humidity: string;
+}
+
 const ws = new WebSocket('ws://10.0.0.126:8080');
 let closeInterval;
 const openSocket = () => {
@@ -13,24 +18,18 @@ const openSocket = () => {
   });
 };
 
-interface SensorValues extends Promise<void> {
-  temperature: string;
-  humidity: string;
-}
-
 const getTemp = async () => {
   try {
     const res = await asyncSensor.read(22, 4);
     return res;
   } catch (err) {
     const x = JSON.stringify(err);
-    await ws.send(x);
+
     console.error('Failed to read sensor data:', err);
   }
 };
 const sentTempToSocket = async () => {
   const res = await getTemp();
-  console.log('res', res);
   const x = JSON.stringify(res);
   await ws.send(x);
 };
@@ -46,4 +45,8 @@ ws.on('close', function close() {
   }, 5000);
 });
 
+const check = () => {
+  if (!ws || ws.readyState == 3) openSocket();
+};
+setInterval(check, 5000);
 openSocket();
