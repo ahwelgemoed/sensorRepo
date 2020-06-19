@@ -1,50 +1,78 @@
-import WebSocket from 'ws';
+import io from 'socket.io-client';
 import sensor from 'node-dht-sensor';
-import ReconnectingWebSocket from 'reconnecting-websocket';
+import cron from 'cron';
 
 const asyncSensor = sensor.promises;
+const CronJob = cron.CronJob;
 
-const options = {
-  WebSocket: WebSocket, // custom WebSocket constructor
-  connectionTimeout: 5000,
-  maxRetries: 100,
-};
+/**
+ * GET this form envFile
+ */
 
-const ws = new ReconnectingWebSocket('ws://10.0.0.126:8080', [], options);
+const SENSOR_ID: string = 'INSIDE';
 
-let interval;
+const socket = io('http://10.0.0.126:8080/', {
+  reconnection: true,
+  forceNew: true,
+});
 
-const openSocket = () => {
-  ws.addEventListener('open', function connection(ws) {
-    setInterval(() => {
-      sentTempToSocket();
-    }, 60000);
-  });
-};
+const liveUpdateNameSpace = io('http://10.0.0.126:8080/liveUpdates', {
+  reconnection: true,
+  forceNew: true,
+});
 
+let liveFeedInterval;
 const getTemp = async () => {
   try {
-    const res = await asyncSensor.read(22, 4);
+    // sensor.initialize({
+    //   test: {
+    //     fake: {
+    //       temperature: 21,
+    //       humidity: 60,
+    //     },
+    //   },
+    // });
+    const x = await asyncSensor.read(22, 4);
+    const res = JSON.stringify(x);
     return res;
   } catch (err) {
     const x = JSON.stringify(err);
-
     console.error('Failed to read sensor data:', err);
   }
 };
+
+// setInterval(() => {
+//   sentTempToSocket();
+// }, 500);
+
 const sentTempToSocket = async () => {
-  clearInterval(interval);
   const res = await getTemp();
-  const x = JSON.stringify(res);
-  await ws.send(x);
+  await socket.emit('oneMinuteData', { sensor: SENSOR_ID, data: res });
 };
 
-ws.addEventListener('message', function incoming(data) {
-  console.log(data);
+liveUpdateNameSpace.on('TURNON', () => {
+  liveFeedInterval = setInterval(() => {
+    sentLiveToSocket();
+  }, 50);
 });
 
-ws.addEventListener('close', function close() {
-  console.log('🔥-Closed');
+liveUpdateNameSpace.on('TURNOFF', () => {
+  clearInterval(liveFeedInterval);
 });
 
-openSocket();
+const sentLiveToSocket = async () => {
+  const res = await getTemp();
+  await liveUpdateNameSpace.emit('liveUpdateNameSpace', {
+    sensor: SENSOR_ID,
+    data: res,
+  });
+};
+
+/**
+ * CRON JOB TO SEND DATA EVERY MIN
+ */
+const saveEveryMin = new CronJob('*/1 * * * *', () => {
+  sentTempToSocket();
+});
+
+saveEveryMin.start();
