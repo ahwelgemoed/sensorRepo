@@ -24,14 +24,14 @@ const liveUpdateNameSpace = io('http://10.0.0.126:8080/liveUpdates', {
 let liveFeedInterval;
 const getTemp = async () => {
   try {
-    // sensor.initialize({
-    //   test: {
-    //     fake: {
-    //       temperature: 21,
-    //       humidity: 60,
-    //     },
-    //   },
-    // });
+    sensor.initialize({
+      test: {
+        fake: {
+          temperature: 21,
+          humidity: 60,
+        },
+      },
+    });
     const x = await asyncSensor.read(22, 4);
     const res = JSON.stringify(x);
     return res;
@@ -51,12 +51,17 @@ const sentTempToSocket = async () => {
 };
 
 liveUpdateNameSpace.on('TURNON', () => {
-  liveFeedInterval = setInterval(() => {
+  liveFeedInterval = setInterval((data) => {
     sentLiveToSocket();
   }, 50);
 });
 
 liveUpdateNameSpace.on('TURNOFF', () => {
+  clearInterval(liveFeedInterval);
+});
+
+liveUpdateNameSpace.on('disconnect', () => {
+  console.log('disconnect');
   clearInterval(liveFeedInterval);
 });
 
